@@ -3,3 +3,5 @@
 *.pbxuser
 .DS_Store
 build/
+www/
+console.log
