@@ -5,10 +5,12 @@ require 'json'
 
 DATA_FILE = File.expand_path('../FakeNameGenerator.com_0dae316a/FakeNameGenerator.com_0dae316a.csv', __FILE__)
 OUTPUT_FILE = File.expand_path('../../www/js/fake_remote_data.js', __FILE__)
+LIMIT=8_000
 
 def documents
   docs = []
   CSV.foreach(DATA_FILE, headers: true) do |csv|
+    break if (docs.size >= LIMIT)
     docs << {
       _id: csv['GUID'],
       given_name: csv['GivenName'],
