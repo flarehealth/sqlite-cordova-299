@@ -6,27 +6,6 @@ function _logPouchError(message, error) {
   console.error(message, error.status, error.name, error.message, error.reason);
 }
 
-var FakeRemoteDatabase = function () { };
-FakeRemoteDatabase.prototype.prepare = function () {
-  var connectAndLoad = function () {
-    this.db = _connectToPouchDb('fake_remote');
-    console.log('Bulk loading ', FAKE_REMOTE_DATA.length, ' records');
-    return this.db.bulkDocs(FAKE_REMOTE_DATA).then(function () {
-      console.log('Bulk loading into "remote" database complete');
-    }, function (error) {
-      _logPouchError('Bulk loading failed', error);
-    });
-  }.bind(this);
-
-  var connectAndLoadAfterError = function (error) {
-    _logPouchError('cleaning up the old remote database failed:', error);
-    connectAndLoad();
-  }.bind(this);
-
-  return _connectToPouchDb('fake_remote').destroy().
-    then(connectAndLoad, connectAndLoadAfterError); // some connect errors don't matter
-};
-
 var LocalDatabase = function () { };
 
 LocalDatabase.prototype.indexes = [
@@ -114,13 +93,19 @@ LocalDatabase.prototype.indexes = [
 ];
 
 LocalDatabase.prototype.prepare = function () {
-  var connect = function () {
+  var connectAndLoad = function () {
     this.db = _connectToPouchDb('local');
+    console.log('Bulk loading ', DATA.length, ' records');
+    return this.db.bulkDocs(DATA).then(function () {
+      console.log('Bulk loading into database complete');
+    }, function (error) {
+      _logPouchError('Bulk loading failed', error);
+    });
   }.bind(this);
 
-  var connectAfterError = function (error) {
-    _logPouchError('cleaning up the old local database failed:', error);
-    connect();
+  var connectAndLoadAfterError = function (error) {
+    _logPouchError('cleaning up the old database failed:', error);
+    connectAndLoad();
   }.bind(this);
 
   var defineIndexes = function () {
@@ -136,7 +121,7 @@ LocalDatabase.prototype.prepare = function () {
   }.bind(this);
 
   return _connectToPouchDb('local').destroy().
-    then(connect, connectAfterError). // some connect errors don't matter
+    then(connectAndLoad, connectAndLoadAfterError). // some connect errors don't matter
     then(defineIndexes);
 };
 
@@ -151,5 +136,4 @@ LocalDatabase.prototype.buildIndex = function (designDocId) {
   return this.db.query(viewName, { limit: 0 });
 };
 
-window.FakeRemoteDatabase = FakeRemoteDatabase;
 window.LocalDatabase = LocalDatabase;

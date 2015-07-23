@@ -19,7 +19,6 @@
 var app = {
   // Application Constructor
   initialize: function() {
-    this.remote = new FakeRemoteDatabase();
     this.local = new LocalDatabase();
 
     if (window.cordova) {
@@ -48,19 +47,11 @@ var app = {
   runAll: function () {
     var self = this;
 
-    self._appendStep("Preparing fake remote database…");
-    self.remote.prepare().then(function () {
-      self._replaceLastStep('Fake remote database prepared');
-
+    Promise.resolve().then(function () {
       self._appendStep('Preparing local database…');
       return self.local.prepare();
     }).then(function () {
       self._replaceLastStep('Local database prepared');
-
-      self._appendStep('Replicating "remote" to local…');
-      return self.local.replicateFrom(self.remote.db);
-    }).then(function () {
-      self._replaceLastStep('Replicated from "remote" to local');
 
       self._appendStep('Building indexes…');
       return self._buildAllIndexes();

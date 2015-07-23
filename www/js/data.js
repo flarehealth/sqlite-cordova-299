@@ -1,4 +1,4 @@
-var FAKE_REMOTE_DATA = [
+var DATA = [
   {
     "_id": "605f2332-01fe-4fa2-aebc-c815466aca4c",
     "given_name": null,
