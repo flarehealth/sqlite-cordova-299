@@ -81,7 +81,7 @@ var app = {
         newStepItem = document.createElement('li');
     newStepItem.appendChild(document.createTextNode(content));
     steps.appendChild(newStepItem);
-    console.log('New step:', content);
+    console.log('[step]', content);
   },
 
   _replaceLastStep: function (content) {
@@ -89,7 +89,7 @@ var app = {
         stepCount = steps.childNodes.length,
         lastStep = steps.childNodes[stepCount - 1];
     lastStep.innerHTML = content;
-    console.log('Step update:', content);
+    console.log('[step]', content);
   },
 
   _buildAllIndexes: function (startFrom) {
@@ -99,7 +99,7 @@ var app = {
         nextIndexId;
     if (indexesComplete < indexCount) {
       nextIndexId = self.local.indexes[indexesComplete]._id;
-      self._replaceLastStep("Built " + indexesComplete + " / " + indexCount + ". Building " + nextIndexId + "…");
+      self._replaceLastStep("Building " + nextIndexId + " (" + (indexesComplete + 1) + " / " + indexCount + ")…");
       return self.local.buildIndex(nextIndexId).then(function () {
         indexesComplete++;
         return self._buildAllIndexes(indexesComplete);
