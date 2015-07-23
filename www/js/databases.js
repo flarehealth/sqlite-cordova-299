@@ -71,12 +71,33 @@ LocalDatabase.prototype.indexes = [
     }
   },
   {
-    _id: '_design/by_city_and_surname',
+    _id: '_design/city_surnames',
     views: {
-      by_city_and_surname: {
+      city_surnames: {
         map: function (doc) {
-          emit([doc.city, doc.surname]);
+          emit(doc.city, doc.surname);
         }.toString()
+      }
+    }
+  },
+  {
+    _id: '_design/surname_cities',
+    views: {
+      surname_cities: {
+        map: function (doc) {
+          emit(doc.surname, doc.city);
+        }.toString()
+      }
+    }
+  },
+  {
+    _id: '_design/city_counts',
+    views: {
+      city_counts: {
+        map: function (doc) {
+          emit(doc.city, 1);
+        }.toString(),
+        reduce: '_sum'
       }
     }
   }
