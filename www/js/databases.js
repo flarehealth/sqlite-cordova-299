@@ -2,6 +2,10 @@ function _connectToPouchDb(databaseName) {
   return new PouchDB(databaseName, { adapter: 'websql', location: 2 });
 }
 
+function _logPouchError(message, error) {
+  console.error(message, error.status, error.name, error.message, error.reason);
+}
+
 var FakeRemoteDatabase = function () { };
 FakeRemoteDatabase.prototype.prepare = function () {
   var connectAndLoad = function () {
@@ -9,11 +13,18 @@ FakeRemoteDatabase.prototype.prepare = function () {
     console.log('Bulk loading ', FAKE_REMOTE_DATA.length, ' records');
     return this.db.bulkDocs(FAKE_REMOTE_DATA).then(function () {
       console.log('Bulk loading into "remote" database complete');
+    }, function (error) {
+      _logPouchError('Bulk loading failed', error);
     });
   }.bind(this);
 
+  var connectAndLoadAfterError = function (error) {
+    _logPouchError('cleaning up the old remote database failed:', error);
+    connectAndLoad();
+  }.bind(this);
+
   return _connectToPouchDb('fake_remote').destroy().
-    then(connectAndLoad, connectAndLoad); // don't care if destroy fails
+    then(connectAndLoad, connectAndLoadAfterError); // some connect errors don't matter
 };
 
 var LocalDatabase = function () { };
@@ -76,12 +87,17 @@ LocalDatabase.prototype.prepare = function () {
     this.db = _connectToPouchDb('local');
   }.bind(this);
 
+  var connectAfterError = function (error) {
+    _logPouchError('cleaning up the old local database failed:', error);
+    connect();
+  }.bind(this);
+
   var defineIndexes = function () {
     var definitionPromises = this.indexes.map(function (designDoc) {
       return this.db.put(designDoc).then(function () {
         console.log('Defined index', designDoc._id);
       }, function (error) {
-        console.log('Failed to define index', designDoc._id, error);
+        _logPouchError('Failed to define index ' + designDoc._id, error);
       });
     }.bind(this));
 
@@ -89,7 +105,7 @@ LocalDatabase.prototype.prepare = function () {
   }.bind(this);
 
   return _connectToPouchDb('local').destroy().
-    then(connect, connect). // don't care if destroy fails
+    then(connect, connectAfterError). // some connect errors don't matter
     then(defineIndexes);
 };
 
