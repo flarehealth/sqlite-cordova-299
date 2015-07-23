@@ -17,35 +17,102 @@
  * under the License.
  */
 var app = {
-    // Application Constructor
-    initialize: function() {
-        this.bindEvents();
-    },
-    // Bind Event Listeners
-    //
-    // Bind any events that are required on startup. Common events are:
-    // 'load', 'deviceready', 'offline', and 'online'.
-    bindEvents: function() {
-        document.addEventListener('deviceready', this.onDeviceReady, false);
-    },
-    // deviceready Event Handler
-    //
-    // The scope of 'this' is the event. In order to call the 'receivedEvent'
-    // function, we must explicitly call 'app.receivedEvent(...);'
-    onDeviceReady: function() {
-        app.receivedEvent('deviceready');
-    },
-    // Update DOM on a Received Event
-    receivedEvent: function(id) {
-        var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
+  // Application Constructor
+  initialize: function() {
+    this.remote = new FakeRemoteDatabase();
+    this.local = new LocalDatabase();
 
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
-
-        console.log('Received Event: ' + id);
+    if (window.cordova) {
+      document.addEventListener('deviceready', this.setToReady.bind(this));
+    } else {
+      setTimeout(this.setToReady.bind(this), 500);
     }
+    document.getElementById('start').addEventListener('click', this.start.bind(this));
+    document.getElementById('start-over').addEventListener('click', this.startOver.bind(this));
+  },
+
+  setToReady: function () {
+    this._switchToCard('ready');
+  },
+
+  start: function () {
+    if (this.started) { return; }
+    this._switchToCard('running');
+    this.runAll();
+  },
+
+  startOver: function () {
+    window.location.reload();
+  },
+
+  runAll: function () {
+    var self = this;
+
+    self._appendStep("Preparing fake remote database…");
+    self.remote.prepare().then(function () {
+      self._replaceLastStep('Fake remote database prepared');
+
+      self._appendStep('Preparing local database…');
+      return self.local.prepare();
+    }).then(function () {
+      self._replaceLastStep('Local database prepared');
+
+      self._appendStep('Replicating "remote" to local…');
+      return self.local.replicateFrom(self.remote.db);
+    }).then(function () {
+      self._replaceLastStep('Replicated from "remote" to local');
+
+      self._appendStep('Building indexes…');
+      return self._buildAllIndexes();
+    }).then(function () {
+      var runningCard = document.getElementById('card-running');
+      runningCard.getElementsByTagName('h1')[0].innerHTML = 'Complete';
+      runningCard.className = runningCard.className + ' complete';
+    });
+  },
+
+  _switchToCard: function (name) {
+    var body = document.getElementsByTagName('body')[0];
+    body.className = 'card-' + name;
+  },
+
+  _appendStep: function (content) {
+    var steps = document.getElementById('steps'),
+        newStepItem = document.createElement('li');
+    newStepItem.appendChild(document.createTextNode(content));
+    steps.appendChild(newStepItem);
+    console.log('New step:', content);
+  },
+
+  _replaceLastStep: function (content) {
+    var steps = document.getElementById('steps'),
+        stepCount = steps.childNodes.length,
+        lastStep = steps.childNodes[stepCount - 1];
+    lastStep.innerHTML = content;
+    console.log('Step update:', content);
+  },
+
+  _buildAllIndexes: function (startFrom) {
+    var self = this,
+        indexCount = self.local.indexes.length,
+        indexesComplete = startFrom || 0,
+        nextIndexId;
+    if (indexesComplete < indexCount) {
+      nextIndexId = self.local.indexes[indexesComplete]._id;
+      self._replaceLastStep("Built " + indexesComplete + " / " + indexCount + ". Building " + nextIndexId + "…");
+      return self.local.buildIndex(nextIndexId).then(function () {
+        indexesComplete++;
+        return self._buildAllIndexes(indexesComplete);
+      }, function (error) {
+        console.error("Building index", nextIndexId, 'failed:', error);
+      });
+    } else {
+      self._replaceLastStep("Built all " + indexesComplete + " indexes");
+      return Promise.resolve();
+    }
+  }
 };
 
 app.initialize();
+
+window.App = app;
