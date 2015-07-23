@@ -100,6 +100,16 @@ LocalDatabase.prototype.indexes = [
         reduce: '_sum'
       }
     }
+  },
+  {
+    _id: '_design/all_the_fields',
+    views: {
+      all_the_fields: {
+        map: function (doc) {
+          emit([doc.city, doc.surname, doc.given_name], doc.national_id);
+        }.toString()
+      }
+    }
   }
 ];
 
