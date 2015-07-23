@@ -8,14 +8,22 @@ native WebSQL.
 
 [299]: https://github.com/litehelpers/cordova-sqlite-storage/issues/299
 
-## Running
+## Run
 
 * Clone this project
 * `cordova prepare`
 * `open platforms/ios/SqliteCordovaIssue299.xcodeproj`
-* Run on a device in the simulator
+* Run on a device or in the simulator
 * Tap "start" in the app
 * Observe memory use in Xcode
+
+## What is it doing?
+
+* It bulk loads 8000 records into a PouchDB database backed by the PouchDB
+  websql adapter and cordova-sqlite-storage.
+* It defines 8 map-reduce indexes with various levels of complexity in the
+  same database.
+* It triggers building each of the indexes in turn.
 
 ## Observations
 
