@@ -3,7 +3,7 @@
 require 'csv'
 require 'json'
 
-DATA_FILE = File.expand_path('../FakeNameGenerator.com_1afefa5d/FakeNameGenerator.com_1afefa5d.csv', __FILE__)
+DATA_FILE = File.expand_path('../FakeNameGenerator.com_0dae316a/FakeNameGenerator.com_0dae316a.csv', __FILE__)
 OUTPUT_FILE = File.expand_path('../../www/js/fake_remote_data.js', __FILE__)
 
 def documents
